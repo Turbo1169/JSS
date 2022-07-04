@@ -17,8 +17,6 @@ type
     TabSheet2: TTabSheet;
     StringGrid2: TStringGrid;
     procedure FormShow(Sender: TObject);
-    procedure StringGrid1DrawCell(Sender: TObject; Col, Row: Longint;
-      Rect: TRect; State: TGridDrawState);
     procedure StringGrid2DrawCell(Sender: TObject; ACol, ARow: Integer;
       Rect: TRect; State: TGridDrawState);
   private
@@ -41,6 +39,7 @@ var
    temp:string;
    cnum,rnum,cnum2:integer;
    x,y:integer;
+   K_Start,LH_Start:integer;
 begin
      MainForm.SJICatlg.indexfieldnames:='Type;Index;Span';
      MainForm.SJICatlg.first;
@@ -48,17 +47,21 @@ begin
      stringgrid1.cells[0,0]:='Span';
      cnum2:=1;
      stringgrid2.cells[0,0]:='Span';
+     K_Start:=0;
+     LH_Start:=0;
      while not MainForm.SJICatlg.eof do
      begin
           if MainForm.SJICatlgtype.value='K' then
           begin
+               if K_Start=0 then
+                  K_Start:=MainForm.SJICatlgspan.value-1; //smallest span (row start)
                stringgrid1.colcount:=stringgrid1.colcount+1;
                temp:=inttostr(MainForm.SJICatlgindex.value);
                stringgrid1.cells[cnum,0]:=copy(temp,1,length(temp)-2)+'K'+
                  inttostr(strtoint(copy(temp,length(temp)-1,2)));
                while (temp=inttostr(MainForm.SJICatlgindex.value)) and (not MainForm.SJICatlg.eof) do
                begin
-                    rnum:=MainForm.SJICatlgspan.value-7;
+                    rnum:=MainForm.SJICatlgspan.value-K_Start;
                     stringgrid1.cells[cnum,rnum]:=MainForm.SJICatlgtotalload.asstring+'/'+MainForm.SJICatlgliveload.asstring;
                     {if MainForm.SJICatlgXBRequired.Value=1 then
                         stringgrid1.cells[cnum,rnum]:='*'+stringgrid1.cells[cnum,rnum];}
@@ -69,6 +72,8 @@ begin
           end
           else
           begin
+               if LH_Start=0 then
+                  LH_Start:=MainForm.SJICatlgspan.value-1; //smallest span (row start)
                stringgrid2.colcount:=stringgrid2.colcount+1;
                temp:=inttostr(MainForm.SJICatlgindex.value);
                if strtoint(copy(temp,1,length(temp)-2))<52 then
@@ -77,7 +82,7 @@ begin
                   stringgrid2.cells[cnum2,0]:=copy(temp,1,length(temp)-2)+'DLH'+copy(temp,length(temp)-1,2);
                while (temp=inttostr(MainForm.SJICatlgindex.value)) and (not MainForm.SJICatlg.eof) do
                begin
-                    rnum:=MainForm.SJICatlgspan.value-20;
+                    rnum:=MainForm.SJICatlgspan.value-LH_Start;
                     stringgrid2.cells[cnum2,rnum]:=MainForm.SJICatlgtotalload.asstring+'/'+MainForm.SJICatlgliveload.asstring;
                     {if MainForm.SJICatlgXBRequired.Value=1 then
                         stringgrid2.cells[cnum2,rnum]:='*'+stringgrid2.cells[cnum2,rnum];
@@ -113,32 +118,39 @@ begin
      end;
 end;
 
-procedure TCatalogForm.StringGrid1DrawCell(Sender: TObject; Col,
-  Row: Longint; Rect: TRect; State: TGridDrawState);
-begin
-        if col=0 then
-        with StringGrid1.Canvas do
-        begin
-                SetTextAlign(Handle, TA_CENTER);
-                FillRect(Rect);
-                TextRect(Rect,TRUNC((Rect.RIGHT-RECT.LEFT)/2), Rect.Top + 2, StringGrid1.Cells[Col, Row]);
-                SetTextAlign(Handle, TA_LEFT);
-        end;
-     {stringgrid1.canvas.font.color:=clred;
-     stringgrid1.canvas.fillrect(rect);
-     stringgrid1.canvas.textout(rect.left+2,rect.top+1,stringgrid1.cells[col,row]);}
-end;
-
 procedure TCatalogForm.StringGrid2DrawCell(Sender: TObject; ACol,
   ARow: Integer; Rect: TRect; State: TGridDrawState);
+var
+  prevhighlightcolor:integer;
 begin
-        if acol=0 then
-        with StringGrid2.Canvas do
+        with (Sender as TStringGrid).Canvas do
         begin
+            prevhighlightcolor:=Brush.Color;
+            Brush.Style:=bsSolid;
+            if (acol=0) and (arow>0) then
+            begin
                 SetTextAlign(Handle, TA_CENTER);
                 FillRect(Rect);
-                TextRect(Rect,TRUNC((Rect.RIGHT-RECT.LEFT)/2), Rect.Top + 2, StringGrid2.Cells[aCol, aRow]);
+                TextRect(Rect,TRUNC((Rect.RIGHT-RECT.LEFT)/2), Rect.Top + 2, (Sender as TStringGrid).Cells[aCol, aRow]);
                 SetTextAlign(Handle, TA_LEFT);
+            end;
+            if copy((Sender as TStringGrid).cells[acol,arow],1,2)='**' then
+            begin
+                    font.color:=clblue;
+                    if State <> [] then
+                      Brush.Color:=prevhighlightcolor;
+                    fillrect(rect);
+                    textout(rect.left+2,rect.top+1,copy((Sender as TStringGrid).cells[acol,arow],3,length((Sender as TStringGrid).cells[acol,arow])-2));
+            end
+            else
+            if copy((Sender as TStringGrid).cells[acol,arow],1,1)='*' then
+            begin
+                    font.color:=clred;
+                    if State <> [] then
+                      Brush.Color:=prevhighlightcolor;
+                    fillrect(rect);
+                    textout(rect.left+2,rect.top+1,copy((Sender as TStringGrid).cells[acol,arow],2,length((Sender as TStringGrid).cells[acol,arow])-1));
+            end;
         end;
 end;
 

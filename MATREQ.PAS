@@ -253,11 +253,21 @@ end;
 procedure TMatReqForm.PropGridDrawCell(Sender: TObject; Col, Row: Longint;
   Rect: TRect; State: TGridDrawState);
 begin
-     if col>1 then
+     if (col=2) and (row>0) then
      with PropGrid.Canvas do
      begin
+       Brush.Style := bsSolid;
+       if State = [] then
+       begin
+         Font.Color:=clWindowText;
+         Brush.Color:=clWindow;
+       end
+       else
+       begin
+         Font.Color := clHighlightText;
+         Brush.Color:=clHighlight;
+       end;
        SetTextAlign(Handle, TA_RIGHT);
-       FillRect(Rect);
        TextRect(Rect, Rect.RIGHT - 2, Rect.Top + 2, PropGrid.Cells[Col, Row]);
        SetTextAlign(Handle, TA_LEFT);
      end;
@@ -309,11 +319,21 @@ end;
 procedure TMatReqForm.WoodGridDrawCell(Sender: TObject; Col,
   Row: Integer; Rect: TRect; State: TGridDrawState);
 begin
-     if col=1 then
+     if (col=1) and (row>0) then
      with woodgrid.Canvas do
      begin
+       Brush.Style := bsSolid;
+       if State = [] then
+       begin
+         Font.Color:=clWindowText;
+         Brush.Color:=clWindow;
+       end
+       else
+       begin
+         Font.Color := clHighlightText;
+         Brush.Color:=clHighlight;
+       end;
        SetTextAlign(Handle, TA_RIGHT);
-       FillRect(Rect);
        TextRect(Rect, Rect.RIGHT - 2, Rect.Top + 2, woodgrid.Cells[Col, Row]);
        SetTextAlign(Handle, TA_LEFT);
      end;

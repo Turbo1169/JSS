@@ -2,8 +2,7 @@ unit LibConv;
 
 interface
 
-uses windows, sysutils, forms, reg, registry, classes, dialogs, BDE, db,
-     dbtables;
+uses windows, sysutils, forms, reg, registry, classes, dialogs;
 
 function ingtodec(ing:shortstring):single; export;
 function dectoing(decn:single):shortstring; export;
@@ -25,7 +24,6 @@ procedure XlsWriteCellLabel(XlsStream: TStream; const ACol, ARow: Word; const AV
 function CalcAccWeight(TypeDesc:string; gage:smallint; adim,bdim,cdim,length:single):single; export;
 function CalcDeckWeight(gage,galvanized,coverage:smallint; CoilWidth:single):single; export;
 function findint(var x1,y1:single; x2,y2,x3,y3,x4,y4:single):boolean; export;
-function checkBDE:boolean; export;
 
 implementation
 
@@ -51,168 +49,6 @@ var
         CXlsRk: array[0..4] of Word = ($27E, 10, 0, 0, 0);
         GageProp:array[0..16] of TGageProp;
         x:integer;
-
-function GetConfigParameter(Param: string; Count: pword): string;
-
-var
-
-  hCur: hDBICur;
-
-  rslt: DBIResult;
-
-  Config: CFGDesc;
-
-  Path, Option: string;
-
-  Temp: array[0..255] of char;
-
-
-
-begin
-
-  Result := ''; hCur := nil;
-
-  if Count <> nil then
-
-    Count^ := 0;
-
-  try
-
-    if Pos(';', Param) = 0 then
-
-      raise EDatabaseError.Create('Invalid parameter passed to function.  There must ' +
-
-         'be a semi-colon delimited sting passed');
-
-    Path := Copy(Param, 0, Pos(';', Param) - 1);
-
-    Option := Copy(Param, Pos(';', Param) + 1, Length(Param) - Pos(';', Param));
-
-    Check(DbiOpenCfgInfoList(nil, dbiREADONLY, cfgPERSISTENT, StrPCopy(Temp, Path), hCur));
-
-    Check(DbiSetToBegin(hCur));
-
-    repeat
-
-      rslt := DbiGetNextRecord(hCur, dbiNOLOCK, @Config, nil);
-
-      if rslt = DBIERR_NONE then
-
-      begin
-
-        if StrPas(Config.szNodeName) = Option then
-
-          Result := Config.szValue;
-
-        if Count <> nil then
-
-          Inc(Count^);
-
-      end
-
-      else
-
-        if rslt <> DBIERR_EOF then
-
-          Check(rslt);
-
-    until rslt <> DBIERR_NONE;
-
-  finally
-
-    if hCur <> nil then
-
-      Check(DbiCloseCursor(hCur));
-
-  end;
-
-end;
-
-procedure SetConfigParameter(Param: string; Value: string);
-
-var
-
-  hCur: hDBICur;
-
-  rslt: DBIResult;
-
-  Config: CFGDesc;
-
-  Path, Option: string;
-
-  Found: boolean;
-
-  Temp: array[0..255] of char;
-
-
-
-begin
-
-  hCur := nil;
-
-  Found := False;
-
-  try
-
-    if Pos(';', Param) = 0 then
-
-      raise EDatabaseError.Create('Invalid parameter passed to function.  There must ' +
-
-         'be a semi-colon delimited sting passed');
-
-    Path := Copy(Param, 0, Pos(';', Param) - 1);
-
-    Option := Copy(Param, Pos(';', Param) + 1, Length(Param) - Pos(';', Param));
-
-    Check(DbiOpenCfgInfoList(nil, dbiREADWRITE, cfgPERSISTENT, StrPCopy(Temp, Path), hCur));
-
-    repeat
-
-      rslt := DbiGetNextRecord(hCur, dbiNOLOCK, @Config, nil);
-
-      if rslt = DBIERR_NONE then
-
-      begin
-
-        if StrPas(Config.szNodeName) = Option then
-
-        begin
-
-          StrPCopy(Config.szValue, Value);
-
-          Check(DbiModifyRecord(hCur, @Config, FALSE));
-
-          Found := True;
-
-          break;
-
-        end;
-
-      end
-
-      else
-
-        if rslt <> DBIERR_EOF then
-
-          Check(rslt);
-
-    until rslt <> DBIERR_NONE;
-
-    if Found = False then
-
-      raise EDatabaseError.Create(Param + ' entry was not found in configuration file');
-
-
-
-  finally
-
-    if hCur <> nil then
-
-      Check(DbiCloseCursor(hCur));
-
- end;
-
-end;
 
 procedure XlsBeginStream(XlsStream: TStream; const BuildNumber: Word);
 begin
@@ -667,20 +503,6 @@ Begin
     S.Free;
   end;
 End;
-
-function checkBDE:boolean;
-begin
-        if (GetConfigParameter('\SYSTEM\INIT\;LOCAL SHARE',nil)='FALSE') or (uppercase(GetConfigParameter('\DRIVERS\PARADOX\INIT\;NET DIR',nil))<>'K:\') then
-        begin
-                result:=false;
-                SetConfigParameter('\DRIVERS\PARADOX\INIT\;NET DIR', 'K:\');
-                SetConfigParameter('\SYSTEM\INIT\;LOCAL SHARE', 'TRUE');
-        end
-        else
-                result:=true;
-        if result=false then
-                MessageDlg('BDE settings corrected. Please restart application.', mtInformation, [mbOk], 0);
-end;
 
 function CalcAccWeight(TypeDesc:string; gage:smallint; adim,bdim,cdim,length:single):single;
 var

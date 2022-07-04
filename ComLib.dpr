@@ -10,7 +10,7 @@ uses
 exports
   XlsBeginStream, XlsEndStream, XlsWriteCellRk, XlsWriteCellNumber, XlsWriteCellLabel,
   ingtodec, dectoing, rndprec, addstr, week, clength, cangle, diagbridg, mpass,
-  verifyreg, inchtodec, dectoinch, CalcAccWeight, CalcDeckWeight, findint, checkBDE;
+  verifyreg, inchtodec, dectoinch, CalcAccWeight, CalcDeckWeight, findint;
 
 begin
 end.

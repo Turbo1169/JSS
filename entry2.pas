@@ -1759,12 +1759,9 @@ begin
           with mainform do
           begin
                temp:=inttostr(trunc(load));
-               //if not KCSJoists.findkey([index,temp]) then
                if not KCSJoists.Locate('Depth;Index',vararrayof([index,temp]),[]) then
                    exit;
-               //load:=kcsjoistsmoment.value;
                livel:=kcsjoistsinertia.value;
-               //minshr:=kcsjoistsshear.value;
                if LRFD then
                begin
                    load:=kcsjoistsmoment.value*1.5;
@@ -1779,11 +1776,10 @@ begin
      end
      else
      begin
-          if load<20 then
+          if load<26 then
              temp:=inttostr(strtoint(index)*100+trunc(load))
           else
               temp:='0';
-          //if mainform.SJICatlg.findkey([temp2,bl1,temp]) then
           if mainform.SJICatlg.Locate('Type;Span;Index',vararrayof([temp2,bl1,temp]),[]) then
           begin
                if bl1=bl2 then
@@ -1794,7 +1790,6 @@ begin
                else
                begin
                     a:=bl1; b:=rbl; c:=bl2; d:=mainform.SJICatlgTotalLoad.value; bl1:=mainform.SJICatlgLiveLoad.value;
-                    //if mainform.SJICatlg.findkey([temp2,bl2,temp]) then
                     if mainform.SJICatlg.Locate('Type;Span;Index',vararrayof([temp2,bl2,temp]),[]) then
                     begin
                          e:=mainform.SJICatlgTotalLoad.value;
@@ -1812,7 +1807,7 @@ begin
           end
           else
           begin
-               if load<20 then
+               if load<26 then
                begin
                     //mainform.sjicatlg.IndexFieldNames:='Type;Index;Span';
                     //mainform.sjicatlg.setrange([temp2,temp,0],[temp2,temp,999]);

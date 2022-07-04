@@ -4120,10 +4120,10 @@ object LoginForm: TLoginForm
       Height = 25
       Caption = 'Change'
       Enabled = False
+      Style = bsNew
       TabOrder = 4
       TabStop = False
       OnClick = BitBtn1Click
-      Style = bsNew
     end
     object OKBtn: TBitBtn
       Left = 320
@@ -4134,9 +4134,9 @@ object LoginForm: TLoginForm
       Default = True
       Enabled = False
       ModalResult = 1
+      Style = bsNew
       TabOrder = 5
       OnClick = OKBtnClick
-      Style = bsNew
     end
     object CancelBtn: TBitBtn
       Left = 320
@@ -4146,8 +4146,8 @@ object LoginForm: TLoginForm
       Cancel = True
       Caption = 'Cancel'
       ModalResult = 2
-      TabOrder = 6
       Style = bsNew
+      TabOrder = 6
     end
     object UserList: TComboBox
       Left = 128
@@ -4156,7 +4156,6 @@ object LoginForm: TLoginForm
       Height = 21
       Style = csDropDownList
       Ctl3D = True
-      ItemHeight = 13
       ParentCtl3D = False
       TabOrder = 0
       OnChange = UserListChange

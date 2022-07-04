@@ -51,7 +51,6 @@ begin
      if userlist.visible then
      with mainform do
      begin
-          //if users.findkey([userList.text]) then
           if users.locate('User',userList.text,[]) then
           if userspassword.value=uppercase(passw.text) then
              retu:=userlist.text

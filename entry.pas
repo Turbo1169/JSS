@@ -186,8 +186,6 @@ type
       Rect: TRect; State: TOwnerDrawState);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure valdectoing(Sender: TObject);
-    procedure ConcGridDrawCell(Sender: TObject; Col, Row: Longint;
-      Rect: TRect; State: TGridDrawState);
     procedure ConcGridKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure PanelCheckClick(Sender: TObject);
@@ -198,8 +196,6 @@ type
       var AllowChange: Boolean);
     procedure PartGridKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
-    procedure PartGridDrawCell(Sender: TObject; Col, Row: Longint;
-      Rect: TRect; State: TGridDrawState);
     procedure PageControl1Changing(Sender: TObject;
       var AllowChange: Boolean);
     procedure SuppLExit(Sender: TObject);
@@ -208,6 +204,8 @@ type
     procedure Button1Click(Sender: TObject);
     procedure SpecialGapClick(Sender: TObject);
     procedure GapValueExit(Sender: TObject);
+    procedure ConcGridDrawCell(Sender: TObject; ACol, ARow: Integer;
+      Rect: TRect; State: TGridDrawState);
   private
     { Private declarations }
   public
@@ -896,17 +894,38 @@ begin
      end;
 end;
 
-procedure TEntryForm.ConcGridDrawCell(Sender: TObject; Col, Row: Longint;
+procedure TEntryForm.ConcGridDrawCell(Sender: TObject; ACol, ARow: Integer;
   Rect: TRect; State: TGridDrawState);
 begin
-    if col>0 then
-    with concgrid.Canvas do
-    begin
-      SetTextAlign(Handle, TA_RIGHT);
-      FillRect(Rect);
-      TextRect(Rect, Rect.RIGHT - 2, Rect.Top + 2, concgrid.Cells[Col, Row]);
-      SetTextAlign(Handle, TA_LEFT);
-    end;
+      with (Sender as TStringGrid).Canvas do
+      begin
+              Brush.Style := bsSolid;
+              if (arow>0)  then
+              begin
+                      if State = [] then
+                      begin
+                        Font.Color:=clWindowText;
+                        Brush.Color:=clWindow;
+                      end
+                      else
+                      begin
+                        Font.Color := clHighlightText;
+                        Brush.Color:=clHighlight;
+                      end;
+                      if ACol>0 then
+                      begin
+                        SetTextAlign(Handle, TA_RIGHT);
+                        TextRect(Rect, Rect.RIGHT - 2, Rect.Top + 2, (Sender as TStringGrid).Cells[aCol, aRow]);
+                      end
+                      else
+                      begin
+                        SetTextAlign(Handle, TA_LEFT);
+                        TextRect(Rect, Rect.Left + 2, Rect.Top + 2, (Sender as TStringGrid).Cells[aCol, aRow]);
+                      end
+
+              end;
+              SetTextAlign(Handle, TA_LEFT);
+      end;
 end;
 
 procedure TEntryForm.ConcGridKeyDown(Sender: TObject; var Key: Word;
@@ -986,19 +1005,6 @@ begin
      end;
      if key=45 then
         insertpartial;
-end;
-
-procedure TEntryForm.PartGridDrawCell(Sender: TObject; Col, Row: Longint;
-  Rect: TRect; State: TGridDrawState);
-begin
-     if col>0 then
-     with partgrid.Canvas do
-     begin
-       SetTextAlign(Handle, TA_RIGHT);
-       FillRect(Rect);
-       TextRect(Rect, Rect.RIGHT - 2, Rect.Top + 2, partgrid.Cells[Col, Row]);
-       SetTextAlign(Handle, TA_LEFT);
-     end;
 end;
 
 procedure TEntryForm.PageControl1Changing(Sender: TObject;

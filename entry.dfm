@@ -24,7 +24,7 @@ object EntryForm: TEntryForm
     Top = 4
     Width = 473
     Height = 281
-    ActivePage = TabSheet5
+    ActivePage = TabSheet1
     TabOrder = 0
     OnChanging = PageControl1Changing
     object TabSheet1: TTabSheet
@@ -188,7 +188,6 @@ object EntryForm: TEntryForm
           'Single Pitch'
           'Double Pitch'
           'Scissor')
-        ParentBackground = True
         TabOrder = 1
         Values.Strings = (
           'P'
@@ -299,7 +298,6 @@ object EntryForm: TEntryForm
           DataField = 'Ridge Position'
           DataSource = MainForm.DataSource2
           Enabled = False
-          ItemHeight = 16
           TabOrder = 0
           OnDrawItem = DBComboBox1DrawItem
         end
@@ -320,6 +318,10 @@ object EntryForm: TEntryForm
     end
     object TabSheet2: TTabSheet
       Caption = 'Geometry'
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object GroupBox6: TGroupBox
         Left = 8
         Top = 8
@@ -349,18 +351,22 @@ object EntryForm: TEntryForm
           Caption = 'ft'
         end
         object PanelGrid: TStringGrid
-          Left = 228
-          Top = 18
+          Left = 225
+          Top = 20
           Width = 209
           Height = 86
           ColCount = 2
           DefaultRowHeight = 16
+          DrawingStyle = gdsClassic
           Enabled = False
           FixedCols = 0
           RowCount = 2
           Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
           TabOrder = 2
           OnDblClick = PanelGridDblClick
+          ColWidths = (
+            64
+            64)
           RowHeights = (
             16
             16)
@@ -714,17 +720,21 @@ object EntryForm: TEntryForm
         end
         object ConcGrid: TStringGrid
           Left = 12
-          Top = 18
+          Top = 20
           Width = 209
           Height = 86
           ColCount = 2
           DefaultRowHeight = 16
+          DrawingStyle = gdsClassic
           FixedCols = 0
           RowCount = 2
           Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
           TabOrder = 0
           OnDrawCell = ConcGridDrawCell
           OnKeyDown = ConcGridKeyDown
+          ColWidths = (
+            64
+            64)
           RowHeights = (
             16
             16)
@@ -963,6 +973,10 @@ object EntryForm: TEntryForm
     end
     object TabSheet4: TTabSheet
       Caption = 'Chords'
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object GroupBox4: TGroupBox
         Left = 8
         Top = 156
@@ -1004,7 +1018,6 @@ object EntryForm: TEntryForm
           Width = 177
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
           TabOrder = 1
         end
         object TCCombo: TComboBox
@@ -1013,7 +1026,6 @@ object EntryForm: TEntryForm
           Width = 177
           Height = 21
           Style = csDropDownList
-          ItemHeight = 13
           TabOrder = 0
         end
         object DBEdit33: TDBEdit
@@ -1123,7 +1135,6 @@ object EntryForm: TEntryForm
           Style = csDropDownList
           DataField = 'TCXRTY'
           DataSource = MainForm.DataSource2
-          ItemHeight = 13
           Items.Strings = (
             'S'
             'R'
@@ -1249,7 +1260,6 @@ object EntryForm: TEntryForm
           Style = csDropDownList
           DataField = 'TCXLTY'
           DataSource = MainForm.DataSource2
-          ItemHeight = 13
           Items.Strings = (
             'S'
             'R'
@@ -1290,6 +1300,10 @@ object EntryForm: TEntryForm
     end
     object TabSheet5: TTabSheet
       Caption = 'Extras'
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object GroupBox5: TGroupBox
         Left = 8
         Top = 8
@@ -1304,12 +1318,17 @@ object EntryForm: TEntryForm
           Height = 86
           ColCount = 3
           DefaultRowHeight = 16
+          DrawingStyle = gdsClassic
           FixedCols = 0
           RowCount = 2
           Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
           TabOrder = 0
-          OnDrawCell = PartGridDrawCell
+          OnDrawCell = ConcGridDrawCell
           OnKeyDown = PartGridKeyDown
+          ColWidths = (
+            64
+            64
+            64)
           RowHeights = (
             16
             16)
@@ -1411,8 +1430,8 @@ object EntryForm: TEntryForm
     Caption = 'OK'
     Default = True
     ModalResult = 1
-    TabOrder = 1
     Style = bsNew
+    TabOrder = 1
   end
   object CancelBtn: TBitBtn
     Left = 398
@@ -1422,7 +1441,7 @@ object EntryForm: TEntryForm
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
-    TabOrder = 2
     Style = bsNew
+    TabOrder = 2
   end
 end

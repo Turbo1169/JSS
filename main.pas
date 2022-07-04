@@ -6,7 +6,8 @@ uses
   SysUtils, Windows, Messages, Classes, Graphics, Controls, Forms, Dialogs,
   Menus, ExtCtrls, Buttons, StdCtrls, DBGrids, DBCtrls, Grids, DB, DBLookup, Mask,
   ComCtrls, Registry, about, math, ImgList, ToolWin, netsec, activeX,
-  comobj, variants, midaslib, WideStrings, ADODB, XPMan, Provider, DBClient;
+  comobj, variants, midaslib, WideStrings, ADODB, Provider, DBClient,
+  System.ImageList;
 
 type
   tcexten=record
@@ -55,6 +56,7 @@ type
     Section:string[2];
     force,weld,thick,angle,csc,shear,Length:single;
     overst,maxc,maxt,allowt,allowc:single;
+    MinVertShear_V1,MinVertShear_V2:single;
   end;
   PJointData=^TJointData;
   TJointData=Record
@@ -826,7 +828,6 @@ type
     BatchedJoistsMark: TWideStringField;
     BatchedJoistsListNumber: TIntegerField;
     Splitter1: TSplitter;
-    XPManifest1: TXPManifest;
     procedure Exit1Click(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -3183,11 +3184,15 @@ procedure TMainForm.EngGridDrawCell(Sender: TObject; Col, Row: Longint;
 var
    temp:single;
 begin
-    if col>0 then
+    if (row>0) and (col>0) then
     with enggrid.Canvas do
     begin
          SetTextAlign(Handle, TA_RIGHT);
-         FillRect(Rect);
+         if state <> [] then
+         begin
+             Font.Color := clHighlightText;
+             Brush.Color:=clHighlight;
+         end;
          if (engineeringbook.pageindex=2) and (col>0) and (enggrid.Cells[Col, Row]<>'') then
          begin
               temp:=0;
@@ -3234,30 +3239,24 @@ begin
          end;
          TextRect(Rect, Rect.RIGHT - 2, Rect.Top + 2, enggrid.Cells[Col, Row]);
          SetTextAlign(Handle, TA_LEFT);
-    end
-    else
-    begin
-         if engineeringbook.pageindex<>2 then
-         with enggrid.Canvas do
-         begin
-              SetTextAlign(Handle, TA_CENTER);
-              FillRect(Rect);
-              TextRect(Rect,TRUNC((Rect.RIGHT-RECT.LEFT)/2), Rect.Top + 2, enggrid.Cells[Col, Row]);
-              SetTextAlign(Handle, TA_LEFT);
-         end;
     end;
 end;
 
 procedure TMainForm.LoadGridDrawCell(Sender: TObject; Col, Row: Longint;
   Rect: TRect; State: TGridDrawState);
 begin
-    if col>0 then
+    if (row>0) and (col>0) then
     with loadgrid.Canvas do
     begin
       SetTextAlign(Handle, TA_RIGHT);
-      FillRect(Rect);
-      TextRect(Rect, Rect.RIGHT - 2, Rect.Top + 2, loadgrid.Cells[Col, Row]);
-      SetTextAlign(Handle, TA_LEFT);
+       if state <> [] then
+       begin
+           Font.Color := clHighlightText;
+           Brush.Color:=clHighlight;
+       end;
+
+       TextRect(Rect, Rect.RIGHT - 2, Rect.Top + 2, loadgrid.Cells[Col, Row]);
+       SetTextAlign(Handle, TA_LEFT);
     end;
 end;
 
@@ -3308,12 +3307,10 @@ begin
      if dept=0 then
      begin
           jobinfo.Locate('Page', pn, []);
-          //joists.findkey([jobinfojobnumber.value,pn,mn]);
      end
      else
      begin
           sequence.Locate('Page', pn, []);
-          //joists.findkey([sequencejobnumber.value,pn,mn]);
      end;
      Joists.Locate('Mark',mn, []);
      Refresh1Click(Sender);
@@ -3681,9 +3678,6 @@ begin
           if sender<>nil then
           begin
                jobpropform:=tjobpropform.create(application);
-               {jobpropform.table1.findkey([jobinfojobnumber.value,jobinfopage.value]);
-               jobpropform.Table1.edit;
-               jobpropform.table1datequoted.value:=date;}
                JobInfo.Edit;
                JobInfoDateQuoted.Value:=date;
                jobpropform.recalcquote;

@@ -53,6 +53,60 @@ function clength(x1,y1,x2,y2:single):single; external 'comlib.dll';
 function rndprec(decn:single):single; external 'comlib.dll';
 function findint(var x1,y1:single; x2,y2,x3,y3,x4,y4:single):boolean; external 'comlib.dll';
 
+procedure CalcMinVertShear(FullUniformLoad:Single; ReductionFactor:Single);
+var
+    x:Integer;
+    membside:char;
+    V1,V2:Single;
+    Xpl:Single; // distance from left end of joist to left node of web
+    Xpr:Single; // distance from left end of joist to right node of web
+    x1,y1,x2,y2:Single;
+    W,L:Single;
+begin
+    for x:=1 to MemberList.count do
+    begin
+        membdata:=MemberList.items[x-1];
+        if x<=middle then
+            membside:='L'
+        else
+            membside:='R';
+        if (membdata^.position<>'W2') and (copy(membdata^.position,1,1)='W') then
+        begin
+            jointdata:=JointList.items[membdata^.joint1-1];
+            x1:=jointdata^.coordX;
+            y1:=jointdata^.coordY;
+            jointdata:=JointList.items[membdata^.joint2-1];
+            x2:=jointdata^.coordX;
+            y2:=jointdata^.coordY;
+
+            if x1<=x2 then
+            begin
+                Xpl:=x1-2;
+                Xpr:=x2-2;
+            end
+            else
+            begin
+                Xpl:=x2-2;
+                Xpr:=x1-2;
+            end;
+
+            //convert to feet
+            Xpl:=Xpl/12;
+            Xpr:=Xpr/12;
+
+            W:=FullUniformLoad*ReductionFactor;
+            L:=wl/12;
+
+            // calculate minimum vertical shear for each web node
+            V1:=(0.125*W*(4.0*sqr(L)-8.0*L*Xpl+3.0*sqr(Xpl)))/L;
+            V2:=(-0.125*W*(2.0*L*Xpr-1.0*sqr(L)+3.0*sqr(Xpr)))/L;
+
+            MembData^.MinVertShear_V1:=MembData^.MinVertShear_V1+V1;
+            MembData^.MinVertShear_V2:=MembData^.MinVertShear_V2+V2;
+        end;
+    end;
+end;
+
 procedure dooverst(var FunctReturn:boolean);
 begin
      if plate>0 then
@@ -1603,7 +1657,7 @@ begin
     fa:=temp;
 end;
 
-procedure uniformload(l:single; chord:string);
+procedure uniformload(FullUniformLoad:single; chord:string);
 var
    tc1,tc2,na,y:integer;
    last,first,next,found:boolean;
@@ -1648,10 +1702,12 @@ begin
           x3:=jointdata^.coordX;
           jointdata:=JointList.items[na];
           x2:=jointdata^.coordX;
-          jointdata^.forceY:=jointdata^.forceY-((x2-x1)/2+(x3-x2)/2)/12*l;
+          jointdata^.forceY:=jointdata^.forceY-((x2-x1)/2+(x3-x2)/2)/12*FullUniformLoad;
           tc1:=na;
           na:=tc2; y:=na;
      end;
+     if chord='TC' then
+        CalcMinVertShear(FullUniformLoad, 1);
 end;
 
 procedure partialuniform(n1,n2:integer; l,l2:single);
@@ -1930,7 +1986,7 @@ begin
      for x:=1 to MemberList.count do
      begin
           membdata:=MemberList.items[x-1];
-          if membdata^.csc>0 then
+          if abs(membdata^.csc)>0 then
           begin
                membdata^.shear:=abs(membdata^.force/membdata^.csc);
                if membdata^.shear>maxshr then
@@ -1957,10 +2013,18 @@ begin
           if membdata^.force<0 then
              sig:=-1;
           if jtype<>'C' then
-             membdata^.force:=(abs(membdata^.force)+addshear*membdata^.csc)*sig;
+             membdata^.force:=(abs(membdata^.force)+addshear*abs(membdata^.csc))*sig;
           if ((abs(membdata^.force/membdata^.csc)<minshr) and (copy(membdata^.position,1,1)<>'V')) or (jtype='C') then
-             membdata^.force:=minshr*membdata^.csc*sig;
+             membdata^.force:=minshr*abs(membdata^.csc)*sig;
           accmax(membdata^.force);
+
+          //45th edition additional minumum shear check
+          if ((membdata^.MinVertShear_V1<>0) or (membdata^.MinVertShear_V2<>0)) then
+          begin
+              accmax(membdata^.MinVertShear_V1*membdata^.csc);
+              accmax(membdata^.MinVertShear_V2*membdata^.csc);
+          end;
+
           if jtype='C' then
           begin
                if membdata^.position='W2' then
@@ -2192,6 +2256,12 @@ begin
           jointdata^.forceX:=0;
           jointdata^.forceY:=0;
      end;
+     for x:=1 to MemberList.count do
+     begin
+          membdata:=MemberList.items[x-1];
+          MembData^.MinVertShear_V1:=0;
+          MembData^.MinVertShear_V2:=0;
+     end;
 end;
 
 procedure domoment(mom:single; side:string);
@@ -2270,10 +2340,12 @@ procedure docase3(f:single); {Total Load}
 begin
      clearjoints;
      addshear:=mainform.joistsanypanel.value*f;
+
      if jtype in jtype1 then
          uniformload(mainform.joiststcuniformload.value*f,'TC')
      else
          uniformload((mainform.joiststcuniformload.value+load)*f,'TC');
+
      uniformload(mainform.joistsbcuniformload.value*f,'BC');
      doconcloads(f,0);
      if MainForm.JoistsAddLoad.Value>0 then
@@ -2403,10 +2475,7 @@ procedure docaseTL_LRFD(f:single); {Total Load LRFD}
 begin
      clearjoints;
      addshear:=mainform.joistsanypanel.value*f;
-     if jtype in jtype1 then
-         uniformload(mainform.joiststcuniformload.value*f,'TC')
-     else
-         uniformload((mainform.joiststcuniformload.value)*f,'TC');
+     uniformload(mainform.joiststcuniformload.value*f,'TC');
      uniformload(mainform.joistsbcuniformload.value*f,'BC');
      doconcloads(f,0);
      if MainForm.JoistsAddLoad.Value>0 then
@@ -2905,9 +2974,14 @@ begin
                membdata^.length:=clength(x1,y1,x2,y2);
                membdata^.angle:=cangle(x1,y1,x2,y2);
                if membdata^.angle>0 then
-                  membdata^.csc:=1/sin(membdata^.angle)
+               begin
+                  if ((x1<x2) and (y1>y2)) or ((x1>x2) and (y2>y1)) then
+                      membdata^.csc:=1/sin(membdata^.angle)
+                  else
+                      membdata^.csc:=-1/sin(membdata^.angle);
+               end
                else
-                   membdata^.csc:=0;
+                  membdata^.csc:=0;
                if (membdata^.joint1=j) or (membdata^.joint2=j) then
                begin
                     if membdata^.joint1=j then
@@ -2942,6 +3016,8 @@ begin
           membdata^.maxc:=0;
           membdata^.maxt:=0;
           membdata^.overst:=0;
+          MembData^.MinVertShear_V1:=0;
+          MembData^.MinVertShear_V2:=0;
      end;
      TCSection.maxforce:=0; BCSection.maxforce:=0;
      TCSection.maxforce2:=0; BCSection.maxforce2:=0;

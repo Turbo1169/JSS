@@ -24,7 +24,7 @@ object EntryForm: TEntryForm
     Top = 4
     Width = 473
     Height = 281
-    ActivePage = TabSheet3
+    ActivePage = TabSheet5
     TabOrder = 0
     OnChanging = PageControl1Changing
     object TabSheet1: TTabSheet

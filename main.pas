@@ -65,8 +65,10 @@ type
   TAngProp=Record
     prevmat,Section:String[2];
     Description:String[20];
-    Radius,Total,Tons,Cost,Q,b,d,t,Area,Weight,Rx,Rz,Y,X,Ix,Iy:single;
+    Total,Tons,Cost,Q,b,d,t,Area,Weight,Rx,Rz,Y,X,Ix,Iy:single;
     plate:integer;
+    K:single;
+    //Radius:single;
   end;
   PRndProp=^TRndProp;
   TRndProp=Record
@@ -933,9 +935,11 @@ type
     procedure doextras(cat:smallint);
     procedure recalcjoist;
     function solvefa(fa:single; chord:chordprop):single;
-    function chkshear(var Chord:Chordprop):boolean;
+    function ChordAngle(JtNum:integer):single;
+    function chkshear(var Chord:Chordprop; Position:string):boolean;
     procedure joistpaint;
     function findsupmemb:single;
+    function GirderBearingCapacity:single;
   end;
 
 const
@@ -978,6 +982,7 @@ var
   tcxl,tcxr:tcexten;
   sp:integer;
   LRFD:boolean;
+  maxPointLoad:single;
 
 implementation
 
@@ -1016,7 +1021,7 @@ end;
 
 procedure CalcAng;
 var
-   temp,a1,iz,a,c:single;
+   temp,a1,iz,a,c,ir:single;
 begin
      a:=angprop^.b-angprop^.t; c:=angprop^.d-angprop^.t;
      angprop^.area:=(angprop^.b+c)*angprop^.t;
@@ -1043,6 +1048,23 @@ begin
         angprop^.Q:=1.34-0.00447*temp*sqrt(Fy);
      if temp>=155/sqrt(Fy) then
         angprop^.Q:=15500/(Fy*intpower(temp,2));
+
+     ir:=1/8;
+     if angprop^.b>=1.125 then
+        ir:=3/32;
+     if angprop^.b>=1.25 then
+        ir:=3/16;
+     if angprop^.b>=1.75 then
+        ir:=1/4;
+     if angprop^.b>=2.5 then
+        ir:=5/16;
+     if angprop^.b>=3.5 then
+        ir:=3/8;
+     if angprop^.b>=5 then
+        ir:=1/2;
+     if angprop^.b>=8 then
+        ir:=5/8;
+     AngProp^.K:=ir+AngProp^.t;
 end;
 
 procedure CalcRnd;
@@ -1077,7 +1099,7 @@ begin
           angprop^.d:=table1.fieldbyname('b2').asfloat;
           angprop^.t:=table1.fieldbyname('Thick').asfloat;
           angprop^.cost:=table1.fieldbyname('Cost').asfloat;
-          angprop^.radius:=table1.fieldbyname('Radius').asfloat;
+          //angprop^.radius:=table1.fieldbyname('Radius').asfloat;
           angprop^.plate:=0;
           angprop^.prevmat:='';
           CalcAng;
@@ -1168,6 +1190,27 @@ begin
      end;
      table1.close;
      table1.free;
+end;
+
+function TMainForm.GirderBearingCapacity:single;
+var
+        cap1,cap2,pp:single;
+begin
+        pp:=(sqr(angprop^.t)*Fy)/(2*(angprop^.b-angprop^.K))*(5+5.66*(angprop^.b-angprop^.K));
+        if LRFD then
+        begin
+                cap1:=0.9*pp;
+                cap2:=0.9*pp*(1.6-TCSection.fa2/(0.9*angprop^.Q*Fy*1000));
+        end
+        else
+        begin
+                cap1:=0.6*pp;
+                cap2:=0.6*pp*(1.6-TCSection.fa2/(0.6*angprop^.Q*Fy*1000));
+        end;
+        if cap1<cap2 then
+                result:=cap1*1000
+        else
+                result:=cap2*1000;
 end;
 
 function TMainForm.findsupmemb:single;
@@ -1323,18 +1366,119 @@ begin
      result:=q7;
 end;
 
-function TMainForm.chkshear(var Chord:Chordprop):boolean;
+function TMainForm.ChordAngle(JtNum:integer):single;
 var
-   fv,ft:single;
+ cm:integer;
+ found:smallint;
+ angle1,angle2,x1,x2,y1,y2:single;
 begin
-     fv:=maxshr/(2*angprop^.t*angprop^.d);
-     ft:=maxtsh/(2*angprop^.area);
-     chord.shrcap:=sqrt(sqr(ft)+4*sqr(fv))/2;
-     //if chord.shrcap<0.4*fy*1000 then
-     if ((chord.shrcap<0.4*fy*1000*overst) and (not LRFD)) or ((chord.shrcap<0.6*fy*1000*overst) and LRFD) then
-        result:=true
-     else
-         result:=false;
+   cm:=0; angle1:=0; angle2:=0;
+   found:=0;
+   while cm<memberlist.Count do
+   begin
+     membdata:=MemberList.items[cm];
+     if ((JtNum=membdata^.Joint1) or (JtNum=membdata^.Joint2)) and (copy(MembData^.Position,1,1)<>'W') and (copy(MembData^.Position,1,1)<>'V') then
+     begin
+       jointdata:=JointList.items[membdata^.joint1-1];
+       x1:=jointdata^.coordX;
+       y1:=jointdata^.coordY;
+       jointdata:=JointList.items[membdata^.joint2-1];
+       x2:=jointdata^.coordX;
+       y2:=jointdata^.coordY;
+       case found of
+       0:begin
+           if y1>y2 then
+             angle1:=-membdata^.angle
+           else
+             angle1:=membdata^.angle;
+         end;
+       1:begin
+           if y1>y2 then
+             angle2:=-membdata^.angle
+           else
+             angle2:=membdata^.angle;
+         end;
+       end;
+       inc(found);
+     end;
+     inc(cm);
+   end;
+   if (found>1) and (angle1<>angle2) then //two chord members intersect joint
+   begin
+     result:=(angle1+angle2)/2;
+   end
+   else
+     result:=angle1;
+end;
+
+function TMainForm.chkshear(var Chord:Chordprop; Position:string):boolean;
+var
+   maxtsh,maxvsh,fv,ft:single;
+   x:integer;
+   tmpangle:single;
+   x1,x2,y1,y2:single;
+   WebAngle,CAngle:single;
+begin
+     result:=true;
+     chord.shrcap:=0;
+     for x:=1 to MemberList.count do
+     begin
+             membdata:=MemberList.items[x-1];
+             if (abs(membdata^.csc)>0) and (copy(membdata^.position,1,1)='W') then //only check diagonal webs and not verticals
+             begin
+
+                 jointdata:=JointList.items[membdata^.joint1-1];
+                 if JointData^.Position=Position then
+                   CAngle:=ChordAngle(membdata^.joint1)
+                 else
+                 begin
+                  jointdata:=JointList.items[membdata^.joint2-1];
+                  CAngle:=ChordAngle(membdata^.joint2)
+                 end;
+
+                 membdata:=MemberList.items[x-1];
+                 jointdata:=JointList.items[membdata^.joint1-1];
+                 x1:=jointdata^.coordX;
+                 y1:=jointdata^.coordY;
+                 jointdata:=JointList.items[membdata^.joint2-1];
+                 x2:=jointdata^.coordX;
+                 y2:=jointdata^.coordY;
+
+                 if ((x1<x2) and (y1>y2)) or ((x1>x2) and (y2>y1)) then
+                   WebAngle:=-membdata^.angle
+                 else
+                   WebAngle:=membdata^.angle;
+
+                 if MembData.maxt>membdata^.maxc then
+                 begin
+                    maxtsh:=MembData.maxt*cos(CAngle-WebAngle);
+                    maxvsh:=MembData.maxt*sin(CAngle-WebAngle);
+                 end
+                 else
+                 begin
+                    maxtsh:=MembData.maxc*cos(CAngle-WebAngle);
+                    maxvsh:=MembData.maxc*sin(CAngle-WebAngle);
+                 end;
+
+                 {if angprop^.Radius>0 then
+                     fv:=maxvsh/(2*angprop^.t*(angprop^.d-angprop^.radius-angprop^.t))
+                 else
+                     fv:=maxvsh/(2*angprop^.t*angprop^.d);}
+
+                 fv:=maxvsh/(2*angprop^.t*angprop^.d);
+
+                 ft:=maxtsh/(2*angprop^.area);
+                 if sqrt(sqr(ft)+4*sqr(fv))/2>chord.shrcap then
+                 begin
+                        chord.shrcap:=sqrt(sqr(ft)+4*sqr(fv))/2;
+                        if ((chord.shrcap>0.4*fy*1000*overst) and (not LRFD)) or ((chord.shrcap>0.6*fy*1000*overst) and LRFD) then
+                        begin
+                               result:=false;
+                               //Chord.controlling:=2;
+                        end;
+                 end;
+             end;
+     end;
 end;
 
 procedure TMainForm.recalcjoist;
@@ -3923,6 +4067,13 @@ begin
     EntryForm.Label3.Caption:='Gross Uplift'
   else
     EntryForm.Label3.Caption:='Net Uplift';
+
+  //needed to refresh loads in KCS
+  if JoistsDescription.Value<>'' then
+  begin
+    LRFD:=JoistsLRFD.Value;
+    dodescription;
+  end;
 end;
 
 procedure TMainForm.JoistsTCPanelsLEValidate(Sender: TField);

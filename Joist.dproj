@@ -1,0 +1,223 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{A68DCE8E-2F8C-43AC-A38C-1734CD54CDCD}</ProjectGuid>
+        <MainSource>Joist.dpr</MainSource>
+        <Base>True</Base>
+        <Config Condition="'$(Config)'==''">Debug</Config>
+        <TargetedPlatforms>1</TargetedPlatforms>
+        <AppType>Application</AppType>
+        <FrameworkType>VCL</FrameworkType>
+        <ProjectVersion>18.1</ProjectVersion>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+        <Base_Win32>true</Base_Win32>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
+        <Cfg_1>true</Cfg_1>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
+        <Cfg_1_Win32>true</Cfg_1_Win32>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
+        <Cfg_2>true</Cfg_2>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+        <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base)'!=''">
+        <DCC_F>false</DCC_F>
+        <DCC_DebugInformation>1</DCC_DebugInformation>
+        <VerInfo_MajorVer>2</VerInfo_MajorVer>
+        <DCC_UnitSearchPath>C:\Program Files\Borland\BDS\4.0\lib\dbxopenmysql5;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_N>true</DCC_N>
+        <DCC_S>false</DCC_S>
+        <DCC_WriteableConstants>true</DCC_WriteableConstants>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <DCC_K>false</DCC_K>
+        <VerInfo_MinorVer>1</VerInfo_MinorVer>
+        <DCC_UsePackage>Vcl40;Vclx40;Vcldb40;vcldbx40;VclSmp40;Qrpt40;TeeUI40;teedb40;tee40;Dss40;ibevnt40;Vclmid40;NMFast40;Inetdb40;Inet40;vcl;vclx;vcldb;qrpt;$(DCC_UsePackage)</DCC_UsePackage>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=2.1.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
+        <DCC_E>false</DCC_E>
+        <SanitizedProjectName>Joist</SanitizedProjectName>
+        <DCC_ImageBase>00400000</DCC_ImageBase>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;System.Win;FMX;$(DCC_Namespace)</DCC_Namespace>
+        <DCC_DcuOutput>C:\Users\Arturo\Documents\Borland Studio Projects\Output</DCC_DcuOutput>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <Icon_MainIcon>Joist_Icon.ico</Icon_MainIcon>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1)'!=''">
+        <DCC_DebugInformation>0</DCC_DebugInformation>
+        <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+        <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+        <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <AppEnableHighDPI>true</AppEnableHighDPI>
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2)'!=''">
+        <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+        <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+        <DCC_Optimize>false</DCC_Optimize>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <AppEnableHighDPI>true</AppEnableHighDPI>
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+    </PropertyGroup>
+    <ItemGroup>
+        <DelphiCompile Include="$(MainSource)">
+            <MainSource>MainSource</MainSource>
+        </DelphiCompile>
+        <DCCReference Include="main.pas">
+            <Form>MainForm</Form>
+        </DCCReference>
+        <DCCReference Include="entry.pas">
+            <Form>EntryForm</Form>
+        </DCCReference>
+        <DCCReference Include="extload.pas">
+            <Form>ExtLoadForm</Form>
+        </DCCReference>
+        <DCCReference Include="catalog.pas">
+            <Form>CatalogForm</Form>
+        </DCCReference>
+        <DCCReference Include="customer.pas">
+            <Form>CustomerForm</Form>
+        </DCCReference>
+        <DCCReference Include="login.pas">
+            <Form>LoginForm</Form>
+        </DCCReference>
+        <DCCReference Include="matprop.pas">
+            <Form>MatPropForm</Form>
+        </DCCReference>
+        <DCCReference Include="batch.pas">
+            <Form>BatchForm</Form>
+        </DCCReference>
+        <DCCReference Include="jobinfo.pas">
+            <Form>JobInfoForm</Form>
+        </DCCReference>
+        <DCCReference Include="seqprop.pas">
+            <Form>SeqPropForm</Form>
+        </DCCReference>
+        <DCCReference Include="tcexten.pas">
+            <Form>TCExtenForm</Form>
+        </DCCReference>
+        <DCCReference Include="pricetbl.pas">
+            <Form>PriceTblForm</Form>
+        </DCCReference>
+        <DCCReference Include="sprink.pas">
+            <Form>SprinkForm</Form>
+        </DCCReference>
+        <DCCReference Include="jobprop.pas">
+            <Form>JobPropForm</Form>
+        </DCCReference>
+        <DCCReference Include="bridg2.pas">
+            <Form>Bridg2Form</Form>
+        </DCCReference>
+        <DCCReference Include="paneltc.pas">
+            <Form>PanelTCForm</Form>
+        </DCCReference>
+        <DCCReference Include="partial.pas">
+            <Form>PartialForm</Form>
+        </DCCReference>
+        <DCCReference Include="matreq.pas">
+            <Form>MatReqForm</Form>
+        </DCCReference>
+        <DCCReference Include="joblook.pas">
+            <Form>JobLookForm</Form>
+        </DCCReference>
+        <DCCReference Include="analysis.pas"/>
+        <DCCReference Include="output.pas"/>
+        <DCCReference Include="output2.pas"/>
+        <DCCReference Include="main2.pas"/>
+        <DCCReference Include="fixes.pas">
+            <Form>FixesForm</Form>
+        </DCCReference>
+        <DCCReference Include="websel.pas">
+            <Form>WebSelForm</Form>
+        </DCCReference>
+        <DCCReference Include="entry2.pas"/>
+        <DCCReference Include="concload.pas">
+            <Form>ConcLoadForm</Form>
+        </DCCReference>
+        <DCCReference Include="bridging.pas">
+            <Form>BridgingForm</Form>
+        </DCCReference>
+        <DCCReference Include="jsubst.pas">
+            <Form>JSubstForm</Form>
+        </DCCReference>
+        <DCCReference Include="about.pas">
+            <Form>AboutForm</Form>
+        </DCCReference>
+        <DCCReference Include="joistrep.pas">
+            <Form>joistrepForm</Form>
+        </DCCReference>
+        <DCCReference Include="exportjobs.pas">
+            <Form>ExportJobsForm</Form>
+        </DCCReference>
+        <DCCReference Include="gpanel.pas">
+            <Form>GPanelForm</Form>
+        </DCCReference>
+        <DCCReference Include="Import.pas">
+            <Form>ImportForm</Form>
+        </DCCReference>
+        <DCCReference Include="PSI.pas">
+            <Form>PSIForm</Form>
+        </DCCReference>
+        <DCCReference Include="NetSec.pas">
+            <Form>SecurityForm</Form>
+        </DCCReference>
+        <BuildConfiguration Include="Debug">
+            <Key>Cfg_2</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Base">
+            <Key>Base</Key>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Release">
+            <Key>Cfg_1</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Delphi.Personality.12</Borland.Personality>
+        <Borland.ProjectType>VCLApplication</Borland.ProjectType>
+        <BorlandProject>
+            <Delphi.Personality>
+                <Source>
+                    <Source Name="MainSource">Joist.dpr</Source>
+                </Source>
+            </Delphi.Personality>
+            <Platforms>
+                <Platform value="Win32">True</Platform>
+            </Platforms>
+        </BorlandProject>
+        <ProjectFileVersion>12</ProjectFileVersion>
+    </ProjectExtensions>
+    <Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
+    <Import Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj" Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')"/>
+</Project>

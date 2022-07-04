@@ -153,6 +153,10 @@ var
   slend:boolean;
   mu,fbu,fau:single;
   fe,fez,fcrz,fcrx,tt:single;
+  Ky:single;
+  StressRatio:single;
+  TensControlled:Boolean;
+  ki,ls,klrym:single;
 begin
     mat:=membdata^.Material;
     l:=membdata^.length;
@@ -170,40 +174,68 @@ begin
     {if (membdata^.position='W3') and (mat='A') then
        k:=1.2;}
 
+    if (jtype in jtype2) and (mat<>'D') then
+    begin
+        //single component members
+        if (membdata^.position='W2') then
+          Ky:=0.8
+        else
+          Ky:=0.9;
+    end
+    else
+      Ky:=1;
+
     if (mat='A') or (mat='D') then
     begin
-
-         Q:=angprop^.Q;
-
          //sji 43rd edition W3 Q value calculation
-         if (membdata^.position='W3') then
+         if (mat='A') and ((membdata^.position='W3') or (membdata^.position='V1S')) then
          begin
             Q:=(5.25/(angprop^.b/angprop^.t))+angprop^.t;
             if Q>1 then
               Q:=1;
-         end;
+         end
+         else
+            Q:=angprop^.Q;
 
          area:=angprop^.area;
          if mat='D' then
          begin
             area:=area*2;
             maxlr:=l/angprop^.Rx*k;
-            Ry:=sqrt(((angprop^.Iy+angprop^.area*sqr(((gap2)/2)+angprop^.y))*2)/(angprop^.area*2));
-            if l/ry>maxlr then
-               maxlr:=l/ry;
-            if (l/2)/angprop^.rz>maxlr then
-            maxlr:=(l/2)/angprop^.rz;
+
+            //Ry:=sqrt(((angprop^.Iy+angprop^.area*sqr(((gap2)/2)+angprop^.y))*2)/(angprop^.area*2));
+            Ry:=sqrt((angprop^.Iy*2+area*sqr((gap2/2)+angprop^.y))/(angprop^.area*2));
+
+            //modified 44th edition slenderness check
+            if jtype in jtype1 then
+              Ki:=1
+            else
+              Ki:=0.5;
+            if l>96 then
+              ls:=l/3
+            else
+              ls:=l/2;
+            if (ls/angprop^.rz>40) then
+            begin
+              klrym:=Sqrt(Sqr(l/ry)+Sqr((Ki*ls)/angprop^.rz));
+              if klrym>maxlr then
+                maxlr:=klrym;
+            end
+            else
+            begin
+              //old slenderness check
+              if Ky*l/ry>maxlr then
+                maxlr:=Ky*l/ry;
+            end;
+
+            if ls/angprop^.rz>maxlr then
+              maxlr:=ls/angprop^.rz;
          end
          else
          begin
-              {maxlr:=l/angprop^.Rx*k;
-              if l/angprop^.rz*k>maxlr then
-                 maxlr:=l/angprop^.rz*k;}
-
-              maxlr:=l/angprop^.Rx;
+              maxlr:=Ky*l/angprop^.Rx;
               if l/angprop^.rz*k>maxlr then
                  maxlr:=l/angprop^.rz*k;
-
          end;
     end
     else
@@ -214,7 +246,6 @@ begin
     end;
     slend:=false;
 
-    //tempc:=fa(maxlr,Q)*area*overst;
     if LRFD then
             tempc:=0.9*fcr(maxlr,Q)*area*overst
     else
@@ -237,6 +268,16 @@ begin
     
     membdata^.allowc:=tempc;
     membdata^.allowt:=tempt;
+
+    StressRatio:=membdata^.maxt/tempt; //tension stress ratio
+    if membdata^.maxc/tempc>StressRatio then
+    begin
+      StressRatio:=membdata^.maxc/tempc; //compression stress ratio
+      TensControlled:=false;
+    end
+    else
+      TensControlled:=true;
+
     if membdata^.maxt>membdata^.maxc then
        tempc:=membdata^.maxt
     else
@@ -263,11 +304,17 @@ begin
          tempt:=weldlen(membdata^.angle,rndprop^.d)*2;
          mainform.findrnd(membdata^.section);
     end;
+
+    //modify tempc to be at least 50% of the controlling force web capacity
+    if (TensControlled) and (tempc<membdata^.allowt*0.5) then
+        tempc:=membdata^.allowt*0.5;
+    if (not TensControlled) and (tempc<membdata^.allowc*0.5) then
+        tempc:=membdata^.allowc*0.5;
+
     if LRFD then
-            membdata^.weld:=tempc/(0.75*cos(pi/4)*2*AWeld*1000*membdata^.thick)
+        membdata^.weld:=tempc/(0.75*IfThen((mat='R'), 1.0, cos(pi/4))*2*AWeld*1000*membdata^.thick)
     else
-            membdata^.weld:=tempc/(cos(pi/4)*AWeld*1000*membdata^.thick);
-    //membdata^.weld:=tempc/(cos(pi/4)*0.3*70000*membdata^.thick);
+        membdata^.weld:=tempc/(IfThen((mat='R'), 1.0, cos(pi/4))*AWeld*1000*membdata^.thick);
 
     if membdata^.weld<2 then
     begin
@@ -278,7 +325,6 @@ begin
                membdata^.thick:=tempc/(0.75*cos(pi/4)*2*AWeld*1000*membdata^.weld)
             else
                membdata^.thick:=tempc/(cos(pi/4)*AWeld*1000*membdata^.weld);
-            //membdata^.thick:=tempc/(cos(pi/4)*0.3*70000*membdata^.weld);
          end
          else
              membdata^.thick:=angprop^.t;
@@ -292,7 +338,6 @@ begin
            membdata^.weld:=tempc/(0.75*cos(pi/4)*2*AWeld*1000*membdata^.thick)
         else
            membdata^.weld:=tempc/(cos(pi/4)*AWeld*1000*membdata^.thick);
-        //membdata^.weld:=tempc/(cos(pi/4)*0.3*70000*membdata^.thick);
         if tempt>membdata^.weld then
            result:=true
         else
@@ -390,8 +435,21 @@ var
         if not HasPlate then
           MembData^.overst:=0;
 
-        endp.bending:=1.5*mainform.joistsanywhereTC.value/endp.l*12+addvcb;
-        if ((rndprec(membdata^.length)<=24) and ((jtype='K') or (jtype='C')) and (endp.bending=0)) or (panel='TC') then
+         if jtype='C' then
+        begin
+           if LRFD then
+              endp.bending:=825
+           else
+              endp.bending:=550;
+        end
+        else
+          endp.bending:=0;
+
+        if (1.5*mainform.joistsanywhereTC.value/endp.l*12+addvcb) > endp.bending then
+              endp.bending:=1.5*mainform.joistsanywhereTC.value/endp.l*12+addvcb;
+        
+        //if ((rndprec(membdata^.length)<=24) and ((jtype='K') or (jtype='C')) and (endp.bending=0)) or (panel='TC') then
+        if (panel='TC') then
         begin
            endp.f:=0;
            result:=true;
@@ -401,7 +459,10 @@ var
         l[2]:=membdata^.length;
         endp.f:=abs(membdata^.maxc/((realed-angprop^.y)/ed));
         endp.fa2:=endp.f/area;
-        endp.fe:=12*sqr(pi)*E*1000/(23*sqr(endp.l/angprop^.rx));
+
+        //endp.fe:=12*sqr(pi)*E*1000/(23*sqr(endp.l/angprop^.rx));
+        endp.fe:=(sqr(pi)*(E*1000))/(sqr(endp.l/angprop^.rx));
+
         if angprop^.plate=0 then
            endp.fillers:=0;
         mainform.findmemb('TC',rol);
@@ -469,7 +530,6 @@ var
                 endp.fa:=0.9*endp.fcr
         else
                 endp.fa:=0.6*endp.fcr;
-        //endp.fa:=fa(endp.lr,angprop^.q);
 
         if (endp.bratio+endp.fa2/endp.fa<=1*overst) and (endp.fa2+endp.ppfb<=fb*overst) and (endp.lr<120) then
            result:=true
@@ -481,7 +541,6 @@ var
                 endp.fa:=0.9*endp.fcr
              else
                 endp.fa:=0.6*endp.fcr;
-             //endp.fa:=fa(endp.lr,angprop^.q);
 
              mainform.findmemb('NP',rol);
              membdata^.weld:=1;
@@ -519,13 +578,24 @@ var
           MembData^.overst:=0;
 
         if jtype='C' then
-           endp.bending:=550
+        begin
+           if LRFD then
+              endp.bending:=825
+           else
+              endp.bending:=550;
+        end
         else
+          endp.bending:=0;
+
+        if (bending+addbending(false)+1.5*mainform.joistsanywhereTC.value/endp.l*12+addvcb) > endp.bending then
             endp.bending:=bending+addbending(false)+1.5*mainform.joistsanywhereTC.value/endp.l*12+addvcb;
 
         endp.f:=abs(membdata^.maxc/((realed-angprop^.y)/ed));
         endp.fa2:=endp.f/area;
-        endp.fe:=12*sqr(pi)*E*1000/(23*sqr(endp.l/angprop^.rx));
+        
+        //endp.fe:=12*sqr(pi)*E*1000/(23*sqr(endp.l/angprop^.rx));
+        endp.fe:=(sqr(pi)*(E*1000))/(sqr(endp.l/angprop^.rx));
+
         if angprop^.plate=0 then
            endp.fillers:=0;
         if endp.bending=0 then
@@ -558,12 +628,10 @@ var
 
         if LRFD then
         begin
-          //endp.cm:=1-0.3*endp.fa2/(0.9*endp.fe);
           endp.bratio:=(endp.cm*endp.mpfb)/((1-endp.fa2/endp.fe)*angprop^.Q*(Fy*0.9*1000));
         end
         else
         begin
-          //endp.cm:=1-0.5*endp.fa2/endp.fe;
           endp.bratio:=(endp.cm*endp.mpfb)/((1-endp.fa2/endp.fe)*angprop^.Q*(Fy*0.6*1000));
         end;
 
@@ -576,7 +644,6 @@ var
                 endp.fa:=0.9*endp.fcr
         else
                 endp.fa:=0.6*endp.fcr;
-        //endp.fa:=fa(endp.lr,angprop^.q)/rfact;
 
         if angprop^.plate=0 then
            membdata^.weld:=0;
@@ -591,7 +658,6 @@ var
                 endp.fa:=0.9*endp.fcr
              else
                 endp.fa:=0.6*endp.fcr;
-             //endp.fa:=fa(endp.lr,angprop^.q);
 
              if angprop^.plate=0 then
                 membdata^.weld:=1;
@@ -608,6 +674,8 @@ var
    var
       maxmp:single;
       maxp,x:integer;
+      KCS_MomCap,KCS_w1,KCS_w2:single;
+      c:integer;
 
       procedure docheck;
       var
@@ -615,106 +683,148 @@ var
       begin
            if (membdata^.weld=1) and (angprop^.plate=0) then
               dec(TCSection.fillers);
+
+           membdata^.weld:=0;
+
            TCsection.bending:=1.5*mainform.joistsanywhereTC.value/membdata^.length*12+addvcb;
-           if not ((rndprec(membdata^.length)<=24) and ((jtype='K') or (jtype='C'))) then
-              TCsection.bending:=TCsection.bending+bending+addbending(false);
-           TCSection.lrx:=membdata^.length/angprop^.Rx;
-           TCSection.lrz:=(membdata^.length/2)/angprop^.Rz;
-           TCSection.lrmax:=TCSection.lrx*k;
-           if TCSection.lryy>TCSection.lrmax then
-              TCSection.lrmax:=TCSection.lryy;
-           if TCSection.lrz>TCSection.lrmax then
-              TCSection.lrmax:=TCSection.lrz;
-           TCSection.ppmom:=TCsection.bending*sqr(membdata^.length/12);
-           TCSection.ppfb:=(TCSection.ppmom*(angprop^.d-angprop^.y))/(angprop^.Ix*2);
-           TCSection.mpmom:=((TCsection.bending*sqr(membdata^.length/12))/24)*12;
-           TCSection.mpfb:=(TCSection.mpmom*angprop^.y)/(angprop^.Ix*2);
-           TCSection.fcr:=fcr(TCSection.lrmax,angprop^.Q);
-           if LRFD then
-              TCSection.fa:=0.9*TCSection.fcr
-           else
-              TCSection.fa:=0.6*TCSection.fcr;
-           //TCSection.fa:=fa(TCSection.lrmax,angprop^.Q);
-           if jtype in jtype1 then
-           begin
-                minlryy:=575;
-                actryy:=wl/TCSection.ryy;
-           end
-           else
-           begin
-                 //from sji 43rd edition
-                 minlryy:=MinValue([170, 124+0.67*depth+28*(depth/bl*12)]);
-                {if (jtype='K') or (jtype='C') then
-                   minlryy:=145
-                else
-                    minlryy:=170;}
+           //if not ((rndprec(membdata^.length)<=24) and ((jtype='K') or (jtype='C'))) then
+           TCsection.bending:=TCsection.bending+bending+addbending(false);
 
-                actryy:=TCSection.lryy;
+           //check bending in interior panels for KCS joists added in 44th edition
+           if (jtype='C') then
+           begin
+              //use smaller of 2 calculated moments
+              KCS_MomCap:=load*(1000/12);
+              KCS_w1:=(8*KCS_MomCap)/Sqr((bl-4)/12);
+              KCS_w2:=(2*minshr)/((bl-4)/12);
+              if TCsection.bending<MinValue([KCS_w1,KCS_w2]) then
+                  TCsection.bending:=MinValue([KCS_w1,KCS_w2]);
            end;
-           if (TCSection.lrmax<=90) and (actryy<minlryy) then
-              slend:=true
-           else
-               slend:=false;
-           TCSection.fa2:=abs(membdata^.maxc/area);
-           TCSection.weld:=weld(membdata^.maxc);
-           TCSection.fe:=(12*sqr(pi)*(E*1000))/(23*sqr(k*TCSection.lrx));
-           TCSection.cm:=1-(0.4*TCSection.fa2)/TCSection.fe;
-           if LRFD then
-              TCSection.bratio:=(TCSection.cm*TCSection.mpfb)/((1-TCSection.fa2/TCSection.fe)*angprop^.Q*(Fy*0.9*1000))
-           else
-              TCSection.bratio:=(TCSection.cm*TCSection.mpfb)/((1-TCSection.fa2/TCSection.fe)*angprop^.Q*(Fy*0.6*1000));
 
-           if tcsection.bending>0 then
-           begin
-                if LRFD then
-                begin
-                   TCSection.mlf:=mainform.solvefa(0.9*fcr(TCSection.lrmax,angprop^.Q),TCsection)*area;
-                   TCSection.mlnf:=mainform.solvefa(0.9*fcr(membdata^.length/angprop^.Rz*k,angprop^.Q),TCsection)*area;
-                end
-                else
-                begin
-                   TCSection.mlf:=mainform.solvefa(0.6*fcr(TCSection.lrmax,angprop^.Q),TCsection)*area;
-                   TCSection.mlnf:=mainform.solvefa(0.6*fcr(membdata^.length/angprop^.Rz*k,angprop^.Q),TCsection)*area;
-                end;
-                //TCSection.mlf:=mainform.solvefa(TCSection.fa,TCsection)*area;
-                //TCSection.mlnf:=mainform.solvefa(fa(membdata^.length/angprop^.Rz*k,angprop^.Q),TCsection)*area;
-           end
-           else
-           begin
-                if LRFD then
-                 begin
-                    tcsection.mlf:=0.9*fcr(TCSection.lrmax,angprop^.Q)*area;
-                    tcsection.mlnf:=0.9*fcr(membdata^.length/angprop^.Rz*k,angprop^.Q)*area;
-                 end
-                 else
-                 begin
-                    tcsection.mlf:=0.6*fcr(TCSection.lrmax,angprop^.Q)*area;
-                    tcsection.mlnf:=0.6*fcr(membdata^.length/angprop^.Rz*k,angprop^.Q)*area;
-                 end;
-                 //tcsection.mlf:=tcsection.fa*area;
-                 //tcsection.mlnf:=fa(membdata^.length/angprop^.Rz*k,angprop^.Q)*area;
-           end;
            if angprop^.plate>0 then
-              tcsection.mlnf:=tcsection.mlf;
-
-           if (TCSection.mlf>=abs(membdata^.maxc)) and slend and ((TCSection.Fa2+TCSection.ppfb)<=fb*overst) then
-           begin
-                if (TCsection.bending>0) and ((TCSection.fa2/TCSection.fa)+TCSection.bratio>1*overst) then
-                   found:=false;
-           end
+              c:=1
            else
-               found:=false;
+              c:=0;
+
+           found:=false;
+           while (not found) and (c<=1) do
+           begin
+
+               TCSection.lrx:=membdata^.length/angprop^.Rx*k;
+
+               TCSection.lrz:=(membdata^.length/2)/angprop^.Rz*k;
+
+               if c=0 then
+                       TCSection.lrz:=(membdata^.length)/angprop^.Rz*k
+               else
+                       TCSection.lrz:=(membdata^.length/2)/angprop^.Rz;
+
+               TCSection.lrmax:=TCSection.lrx;
+               if TCSection.lryy>TCSection.lrmax then
+                  TCSection.lrmax:=TCSection.lryy;
+               if TCSection.lrz>TCSection.lrmax then
+                  TCSection.lrmax:=TCSection.lrz;
+               TCSection.ppmom:=TCsection.bending*sqr(membdata^.length/12);
+               TCSection.ppfb:=(TCSection.ppmom*(angprop^.d-angprop^.y))/(angprop^.Ix*2);
+               TCSection.mpmom:=((TCsection.bending*sqr(membdata^.length/12))/24)*12;
+               TCSection.mpfb:=(TCSection.mpmom*angprop^.y)/(angprop^.Ix*2);
+               TCSection.fcr:=fcr(TCSection.lrmax,angprop^.Q);
+               if LRFD then
+                  TCSection.fa:=0.9*TCSection.fcr
+               else
+                  TCSection.fa:=0.6*TCSection.fcr;
+                  
+               if jtype in jtype1 then
+               begin
+                    minlryy:=575;
+                    actryy:=wl/TCSection.ryy;
+               end
+               else
+               begin
+                    //from sji 43rd edition
+                    minlryy:=MinValue([170, 124+0.67*depth+28*(depth/bl*12)]);
+                    actryy:=TCSection.lryy;
+               end;
+               if (TCSection.lrmax<=90) and (actryy<minlryy) then
+                  slend:=true
+               else
+                   slend:=false;
+               TCSection.fa2:=abs(membdata^.maxc/area);
+               TCSection.weld:=weld(membdata^.maxc);
+
+               //TCSection.fe:=(12*sqr(pi)*(E*1000))/(23*sqr(TCSection.lrx));
+               TCSection.fe:=(sqr(pi)*(E*1000))/(sqr(TCSection.lrx));
+
+               TCSection.cm:=1-(0.4*TCSection.fa2)/TCSection.fe;
+               if LRFD then
+                  TCSection.bratio:=(TCSection.cm*TCSection.mpfb)/((1-TCSection.fa2/TCSection.fe)*angprop^.Q*(Fy*0.9*1000))
+               else
+                  TCSection.bratio:=(TCSection.cm*TCSection.mpfb)/((1-TCSection.fa2/TCSection.fe)*angprop^.Q*(Fy*0.6*1000));
+
+               if tcsection.bending>0 then
+               begin
+                    if LRFD then
+                    begin
+                       TCSection.mlf:=mainform.solvefa(0.9*fcr(TCSection.lrmax,angprop^.Q),TCsection)*area;
+                       TCSection.mlnf:=mainform.solvefa(0.9*fcr(membdata^.length/angprop^.Rz*k,angprop^.Q),TCsection)*area;
+                    end
+                    else
+                    begin
+                       TCSection.mlf:=mainform.solvefa(0.6*fcr(TCSection.lrmax,angprop^.Q),TCsection)*area;
+                       TCSection.mlnf:=mainform.solvefa(0.6*fcr(membdata^.length/angprop^.Rz*k,angprop^.Q),TCsection)*area;
+                    end;
+               end
+               else
+               begin
+                    if LRFD then
+                     begin
+                        tcsection.mlf:=0.9*fcr(TCSection.lrmax,angprop^.Q)*area;
+                        tcsection.mlnf:=0.9*fcr(membdata^.length/angprop^.Rz*k,angprop^.Q)*area;
+                     end
+                     else
+                     begin
+                        tcsection.mlf:=0.6*fcr(TCSection.lrmax,angprop^.Q)*area;
+                        tcsection.mlnf:=0.6*fcr(membdata^.length/angprop^.Rz*k,angprop^.Q)*area;
+                     end;
+               end;
+               if angprop^.plate>0 then
+                  tcsection.mlnf:=tcsection.mlf;
+
+               // ASD modification
+               if slend and (abs(TCSection.Fa2+TCSection.ppfb)<=fb*overst) then
+               begin
+                       if (TCSection.fa2/TCSection.fa)>=0.2 then
+                          found:=((TCSection.fa2/TCSection.fa)+(8/9)*TCSection.bratio<=1*overst)
+                       else
+                          found:=((TCSection.fa2/(2*TCSection.fa))+TCSection.bratio<=1*overst);
+               end;
+
+               if not found then
+                    inc(c);
+           end;
 
            stpctpp:=(abs(TCSection.Fa2+TCSection.ppfb))/(fb*overst);
            stpctmp:=(abs(TCSection.Fa2/TCSection.Fa)+TCSection.bratio)/overst;
            if stpctpp<stpctmp then
               stpctpp:=stpctmp;
+
+           {if ((stpctpp>=maxmp) or ((c>0) and (TCSection.fillers=0)) or (angprop^.plate>0) ) and (not ((c=0) and (TCSection.fillers>0))) then
+           begin
+                maxmp:=stpctpp;
+                maxp:=x;
+           end;
+           if (c>0) and (membdata^.weld=0) and (angprop^.plate=0) then
+           begin
+                membdata^.weld:=1;
+                inc(TCSection.fillers);
+           end;}
+
            if stpctpp>=maxmp then
            begin
                 maxmp:=stpctpp;
                 maxp:=x;
            end;
-           if (membdata^.maxc>tcsection.mlnf) and (membdata^.position='TC') then
+           if (membdata^.maxc>tcsection.mlnf) then
            begin
                 membdata^.weld:=1;
                 inc(TCSection.fillers);
@@ -726,7 +836,7 @@ var
            TCSection.fillers:=0;
         TCSection.sl:=angprop^.ix/angprop^.y;
         TCSection.ss:=angprop^.ix/(angprop^.d-angprop^.y);
-        TCSection.lryy:=latsup/TCSection.Ryy;
+        TCSection.lryy:=ifThen((jtype in jtype2),0.94,1)*latsup/TCSection.Ryy;
         maxmp:=0; maxp:=0;
         for x:=1 to memberlist.count do
         begin
@@ -755,7 +865,8 @@ var
    end;
 
 begin
-     if (jtype='L') or (jtype='D') then
+     //if (jtype='L') or (jtype='D') then
+     if jtype in jtype2 then
         k:=0.75
      else
         k:=1;
@@ -769,8 +880,9 @@ begin
           area:=area-angprop^.plate*(1-36/50);
      end;
 
-     result:=mainform.chkshear(TCSection);
+     result:=mainform.chkshear(TCSection, 'TC');
      intpcheck;
+
      if not endpanel(endPL,'L') then
         dooverst(result);
      if not endpanel(endPR,'R') then
@@ -779,6 +891,10 @@ begin
         dooverst(result);
      if not firstpanel(firstPR,'R') then
         dooverst(result);
+
+     if (jtype in jtype1) and (MainForm.GirderBearingCapacity<maxPointLoad/2) then
+        result:=false;
+
      if TCSection.maxforce2>0 then
      begin
           for y:=1 to memberlist.count do
@@ -823,13 +939,13 @@ var
                  1.5*mainform.joistsanywhereBC.value/membdata^.length*12+addvcb;
         if (mainform.joistsnetuplift.value>bcsection.bending) and (jtype in jtype2) then
               bcsection.bending:=mainform.joistsnetuplift.value*0.75;
-        bcsection.lrx:=membdata^.length/angprop^.Rx;
+        bcsection.lrx:=membdata^.length/angprop^.Rx*k;
         bcsection.lrz:=(membdata^.length/2)/angprop^.Rz;
         bcsection.ppmom:=bcsection.bending*sqr(membdata^.length/12);
         bcsection.ppfb:=(bcsection.ppmom*(angprop^.d-angprop^.y))/(angprop^.Ix*2);
         bcsection.mpmom:=((bcsection.bending*sqr(membdata^.length/12))/24)*12;
         bcsection.mpfb:=(bcsection.mpmom*angprop^.y)/(angprop^.Ix*2);
-        bcsection.lrmax:=bcsection.lrx*k;
+        bcsection.lrmax:=bcsection.lrx;
         if bcsection.lryy>bcsection.lrmax then
            bcsection.lrmax:=bcsection.lryy;
         if bcsection.lrz>bcsection.lrmax then
@@ -840,7 +956,6 @@ var
            bcsection.fa:=0.9*bcsection.fcr
         else
            bcsection.fa:=0.6*bcsection.fcr;
-        //bcsection.fa:=fa(bcsection.lrmax,angprop^.Q);
 
         if (bcsection.lrmax<=200) then
            slend:=true
@@ -848,7 +963,10 @@ var
             slend:=false;
         bcsection.fa2:=abs(membdata^.maxc/area);
         bcsection.weld:=weld(membdata^.maxc);
-        bcsection.fe:=(12*sqr(pi)*(E*1000))/(23*sqr(k*bcsection.lrx));
+
+        //bcsection.fe:=(12*sqr(pi)*(E*1000))/(23*sqr(k*bcsection.lrx));
+        bcsection.fe:=(sqr(pi)*(E*1000))/(sqr(bcsection.lrx));
+
         bcsection.cm:=1-(0.4*bcsection.fa2)/bcsection.fe;
 
         if LRFD then
@@ -883,18 +1001,6 @@ var
           end;
         end;
 
-        {if bcsection.bending>0 then
-        begin
-             bcsection.mlf:=mainform.solvefa(bcsection.fa,BCsection)*area;
-             bcsection.mlnf:=mainform.solvefa(fa(membdata^.length/angprop^.Rz*k,angprop^.Q),BCsection)*area;
-        end
-        else
-        begin
-             bcsection.mlf:=bcsection.fa*area;
-             bcsection.mlnf:=fa(membdata^.length/angprop^.Rz*k,angprop^.Q)*area;
-        end;}
-
-
         if angprop^.plate>0 then
            bcsection.mlnf:=bcsection.mlf;
         if (bcsection.mlf>=membdata^.maxc) and slend and (abs(BCSection.Fa2+BCSection.ppfb)<=fb*overst) then
@@ -921,7 +1027,11 @@ var
    end;
 
 begin
-     k:=1;
+    if jtype in jtype2 then
+        k:=0.9
+     else
+        k:=1;
+
      result:=true;
      bcsection.tenst:=0;
      if angprop^.plate=0 then
@@ -937,6 +1047,9 @@ begin
      bcsection.sl:=angprop^.ix/angprop^.y;
      bcsection.ss:=angprop^.ix/(angprop^.d-angprop^.y);
      maxmp:=0; maxp:=0;
+
+     result:=mainform.chkshear(BCsection, 'BC');
+
      for x:=1 to memberlist.count do
      begin
           found:=true;
@@ -970,7 +1083,10 @@ begin
                end
                else
                    found:=false;
-               bcsection.lryy:=latsup2/bcsection.Ryy;
+
+               //bcsection.lryy:=latsup2/bcsection.Ryy;
+               BCSection.lryy:=ifThen((jtype in jtype2),0.94,1)*latsup2/bcsection.Ryy;
+
                if not found then
                   dooverst(result);
                if membdata^.maxc>0 then
@@ -979,6 +1095,7 @@ begin
                        membdata^.weld:=0;
                     docheck;
                end;
+
                if not found then
                   dooverst(result);
           end;
@@ -1001,8 +1118,6 @@ begin
      end
      else
         latsup2:=BCSection.Ryy*240;
-
-     mainform.chkshear(BCsection);
 end;
 
 function findlen(r,p,a,q,l:single):single;
@@ -1918,6 +2033,11 @@ begin
           jointdata:=JointList.items[x-1];
           matrix2[2*x-1]:=-jointdata^.forceX;
           matrix2[2*x]:=-jointdata^.forceY;
+          if (jtype in jtype1) and (JointData^.Position='TC') then
+          begin
+                if abs(jointdata^.forceY)>maxPointLoad then
+                        maxPointLoad:=abs(jointdata^.forceY);
+          end;
      end;
      for x:=1 to memb do
      begin
@@ -2293,8 +2413,10 @@ begin
         doaddload(f,MainForm.JoistsAddLoad.Value);
      doconcloads(f,1);
      dopartloads(f,false);
-     if jtype in jtype1 then
-        loadgirder(load*f);
+
+     {if jtype in jtype1 then
+        loadgirder(load*f);}
+
      calcforces;
 end;
 
@@ -2324,6 +2446,12 @@ begin
 
      //Total Load
      docaseTL_LRFD(1.6); //Total Load * 1.6
+
+     {if jtype in jtype2 then
+     begin
+        uniformload(1.2*((1.5*load-1.6*livel)/1.2),'TC');
+        uniformload(1.6*livel,'TC');
+     end;}
 
      //Dead Load
      if jtype in jtype1 then
@@ -2356,6 +2484,12 @@ begin
 
      //Total Load
      docaseTL_LRFD(1.6); //Total Load * 1.6
+
+     {if jtype in jtype1 then
+     begin
+        uniformload(1.2*((1.5*load-1.6*livel)/1.2),'TC');
+        uniformload(1.6*livel,'TC');
+     end;}
 
      //Dead Load
      if jtype in jtype1 then
@@ -2814,6 +2948,7 @@ begin
      firstpl.fillers:=0; firstpr.fillers:=0;
      maxr1:=0; maxr2:=0;
      maxshr:=0; maxtsh:=0;
+     maxPointLoad:=0;
 
      if LRFD then
         fb:=fy*0.9*1000

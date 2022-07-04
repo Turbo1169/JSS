@@ -15035,6 +15035,8 @@ object MainForm: TMainForm
       Left = 0
       Top = 0
       Caption = 'Normal'
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object Panel1: TPanel
         Left = 95
         Top = 0
@@ -17621,6 +17623,8 @@ object MainForm: TMainForm
             Left = 0
             Top = 0
             Caption = 'Engineering'
+            ExplicitWidth = 0
+            ExplicitHeight = 0
             object EngineeringBook: TNotebook
               Left = 0
               Top = 0
@@ -18146,6 +18150,8 @@ object MainForm: TMainForm
                 Left = 0
                 Top = 0
                 Caption = 'Stress Analysis'
+                ExplicitWidth = 0
+                ExplicitHeight = 0
                 object Panel9: TPanel
                   Left = 0
                   Top = 0
@@ -20614,7 +20620,7 @@ object MainForm: TMainForm
     CursorType = ctStatic
     LockType = ltReadOnly
     IndexFieldNames = 'Type;Span;Index'
-    TableName = 'SJICatlg'
+    TableName = 'SJICatlg43'
     Left = 768
     Top = 96
     object SJICatlgType: TWideStringField

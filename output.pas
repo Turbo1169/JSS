@@ -820,7 +820,7 @@ begin
           font.size:=10;
           font.style:=[];
           font.height:=round(-font.height*fontscle);
-          textout(trunc(scle*0.4),trunc(scle*line),'11435 STOCKYARD | EL PASO, TX 79927');
+          textout(trunc(scle*0.4),trunc(scle*line),'5812 CROMO DRIVE | EL PASO, TX 79912');
           //line:=line+font.height/scle;
           //textout(trunc(scle*0.4),trunc(scle*line),'PHONE (915)726-6285 | FAX (01152656)648-6083');
           line:=line2;
@@ -848,7 +848,8 @@ var
             font.size:=12;
             font.height:=round(-font.height*fontscle);
             font.style:=[fsbold];
-            textout(trunc(scle*4.0),trunc(scle*0.30),'STRESS ANALYSIS - PAGE '+inttostr(page));
+            textout(trunc(scle*3.5),trunc(scle*0.30),'STRESS ANALYSIS - PAGE '+inttostr(page));
+            textout(trunc(scle*6.5),trunc(scle*0.30),'SJI 2015 DESIGN GUIDE');
             dobox(temppaint,fontscle,scle,2,0.5,1,'Job Number:',jobjobnumber.value);
             if dept=0 then
                dobox(temppaint,fontscle,scle,3,0.5,4.2,'Job Name:',jobjobname.value+' - '+jobinfoDescription.value)
@@ -1230,7 +1231,12 @@ begin
                line2:=dobox(temppaint,fontscle,scle,6.8,line2,1.4,'BC L/Rz:',
                       format('%0.4n',[BCSection.maxintp/angprop^.Rz]))+0.05;
                line2:=dobox(temppaint,fontscle,scle,6.8,line2,1.4,'TC Shear Stress:',format('%0.2n',[TCSection.shrcap]));
-               dobox(temppaint,fontscle,scle,6.8,line2,1.4,'BC Shear Stress:',format('%0.2n',[BCSection.shrcap]));
+               line2:=dobox(temppaint,fontscle,scle,6.8,line2,1.4,'BC Shear Stress:',format('%0.2n',[BCSection.shrcap]));
+               if jtype in jtype1 then
+               begin
+                        findangle(TCSection.Section);
+                        dobox(temppaint,fontscle,scle,6.8,line2,1.4,'TC Bearing Capacity:',format('%0.2n',[maxPointLoad/2000])+'K < '+format('%0.2n',[GirderBearingCapacity/1000])+'K');
+               end;
                line:=line+font.height/scle;
                font.name:='Arial';
                font.size:=10;

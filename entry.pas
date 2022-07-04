@@ -832,20 +832,21 @@ begin
 end;
 
 procedure TEntryForm.FormClose(Sender: TObject; var Action: TCloseAction);
-var
-   d:single;
+//var
+//   d:single;
 begin
      if modalresult=mrOk then
      begin
           OKBtn.setfocus;
           if not okbtn.focused then
              abort;
-          d:=depth*24;
+          {d:=depth*24;
           if (jtype='D') or (jtype='L') then
-             d:=d+8;
-          if rndprec(ingtodec(mainform.joistsbaselength.value))>d then
+             d:=d+8;}
+          //if rndprec(ingtodec(mainform.joistsbaselength.value))>d then
+          if rndprec(wl)/depth>24 then
           begin
-             if MessageDlg('The joist length exceeds 24 times its depth', mtWarning, [mbOk, mbCancel], 0)=mrcancel then
+             if MessageDlg('The joist working length exceeds 24 times its depth', mtWarning, [mbOk, mbCancel], 0)=mrcancel then
                 abort;
           end;
           mainform.casecombo.itemindex:=0;

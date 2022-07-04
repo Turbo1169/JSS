@@ -57,7 +57,7 @@ end;
 
 function bearingcap:single;
 var
-        fac,g,pp,k,pp2:single;
+        fac,g,pp,pp2:single;
 begin
         fac:=EndPL.fa2;
         if FirstPL.fa2>fac then
@@ -68,9 +68,8 @@ begin
                 fac:=EndPR.fa2;
         if tcsection.fa2>fac then
                 fac:=tcsection.fa2;
-        k:=angprop^.t+angprop^.Radius;
         g:=5;
-        pp:=sqr(angprop^.t)*Fy/(2*(angprop^.b-k))*(g+5.66*(angprop^.b-k));
+        pp:=sqr(angprop^.t)*Fy/(2*(angprop^.b-k))*(g+5.66*(angprop^.b-angprop^.k));
         if LRFD then
         begin
           pp:=pp*0.9;
@@ -86,27 +85,6 @@ begin
         else
                 result:=pp2;
 end;
-
-{function GirderBearingCapacity:single;
-var
-        cap1,cap2,pp:single;
-begin
-        pp:=(sqr(angprop^.t)*Fy)/(2*(angprop^.b-angprop^.K))*(5+5.66*(angprop^.b-angprop^.K));
-        if loadcomb=2 then
-        begin
-                cap1:=0.9*pp;
-                cap2:=0.9*pp*(1.6-TCSection.fa2/(0.9*angprop^.Q*Fy*1000));
-        end
-        else
-        begin
-                cap1:=0.6*pp;
-                cap2:=0.6*pp*(1.6-TCSection.fa2/(0.6*angprop^.Q*Fy*1000));
-        end;
-        if cap1<cap2 then
-                result:=cap1*1000
-        else
-                result:=cap2*1000;
-end;}
 
 function defaultseat:single;
 var

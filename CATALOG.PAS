@@ -40,45 +40,51 @@ procedure TCatalogForm.FormShow(Sender: TObject);
 var
    temp:string;
    cnum,rnum,cnum2:integer;
+   x,y:integer;
 begin
-     mainform.sjicatlg.Filtered:=false;
      MainForm.SJICatlg.indexfieldnames:='Type;Index;Span';
-     mainform.sjicatlg.First;
+     MainForm.SJICatlg.first;
      cnum:=1;
      stringgrid1.cells[0,0]:='Span';
      cnum2:=1;
      stringgrid2.cells[0,0]:='Span';
-     while not mainform.sjicatlg.eof do
+     while not MainForm.SJICatlg.eof do
      begin
-          if mainform.sjicatlgtype.value='K' then
+          if MainForm.SJICatlgtype.value='K' then
           begin
                stringgrid1.colcount:=stringgrid1.colcount+1;
-               temp:=inttostr(mainform.sjicatlgindex.value);
+               temp:=inttostr(MainForm.SJICatlgindex.value);
                stringgrid1.cells[cnum,0]:=copy(temp,1,length(temp)-2)+'K'+
                  inttostr(strtoint(copy(temp,length(temp)-1,2)));
-               while (temp=inttostr(mainform.sjicatlgindex.value)) and (not mainform.sjicatlg.eof) do
+               while (temp=inttostr(MainForm.SJICatlgindex.value)) and (not MainForm.SJICatlg.eof) do
                begin
-                    rnum:=mainform.sjicatlgspan.value-7;
-                    stringgrid1.cells[cnum,rnum]:=mainform.sjicatlgtotalload.asstring+'/'+mainform.sjicatlgliveload.asstring;
-                    stringgrid1.cells[0,rnum]:=mainform.sjicatlgspan.asstring;
-                    mainform.sjicatlg.next;
+                    rnum:=MainForm.SJICatlgspan.value-7;
+                    stringgrid1.cells[cnum,rnum]:=MainForm.SJICatlgtotalload.asstring+'/'+MainForm.SJICatlgliveload.asstring;
+                    {if MainForm.SJICatlgXBRequired.Value=1 then
+                        stringgrid1.cells[cnum,rnum]:='*'+stringgrid1.cells[cnum,rnum];}
+                    stringgrid1.cells[0,rnum]:=MainForm.SJICatlgspan.asstring;
+                    MainForm.SJICatlg.next;
                end;
                inc(cnum);
           end
           else
           begin
                stringgrid2.colcount:=stringgrid2.colcount+1;
-               temp:=inttostr(mainform.sjicatlgindex.value);
+               temp:=inttostr(MainForm.SJICatlgindex.value);
                if strtoint(copy(temp,1,length(temp)-2))<52 then
-                stringgrid2.cells[cnum2,0]:=copy(temp,1,length(temp)-2)+'LH'+copy(temp,length(temp)-1,2)
+                  stringgrid2.cells[cnum2,0]:=copy(temp,1,length(temp)-2)+'LH'+copy(temp,length(temp)-1,2)
                else
-                stringgrid2.cells[cnum2,0]:=copy(temp,1,length(temp)-2)+'DLH'+copy(temp,length(temp)-1,2);
-               while (temp=inttostr(mainform.sjicatlgindex.value)) and (not mainform.sjicatlg.eof) do
+                  stringgrid2.cells[cnum2,0]:=copy(temp,1,length(temp)-2)+'DLH'+copy(temp,length(temp)-1,2);
+               while (temp=inttostr(MainForm.SJICatlgindex.value)) and (not MainForm.SJICatlg.eof) do
                begin
-                    rnum:=mainform.sjicatlgspan.value-20;
-                    stringgrid2.cells[cnum2,rnum]:=mainform.sjicatlgtotalload.asstring+'/'+mainform.sjicatlgliveload.asstring;
-                    stringgrid2.cells[0,rnum]:=mainform.sjicatlgspan.asstring;
-                    mainform.sjicatlg.next;
+                    rnum:=MainForm.SJICatlgspan.value-20;
+                    stringgrid2.cells[cnum2,rnum]:=MainForm.SJICatlgtotalload.asstring+'/'+MainForm.SJICatlgliveload.asstring;
+                    {if MainForm.SJICatlgXBRequired.Value=1 then
+                        stringgrid2.cells[cnum2,rnum]:='*'+stringgrid2.cells[cnum2,rnum];
+                    if MainForm.SJICatlgXBRequired.Value=2 then
+                        stringgrid2.cells[cnum2,rnum]:='**'+stringgrid2.cells[cnum2,rnum];}
+                    stringgrid2.cells[0,rnum]:=MainForm.SJICatlgspan.asstring;
+                    MainForm.SJICatlg.next;
                end;
                inc(cnum2);
           end;
@@ -87,6 +93,24 @@ begin
      StringGrid1.ColWidths[0]:=40;
      stringgrid2.fixedcols:=1;
      stringgrid2.ColWidths[0]:=40;
+     MainForm.SJICatlg.indexfieldnames:='Type;Span;Index';
+     rnum:=1;
+     while rnum<StringGrid2.RowCount do
+     begin
+        if stringgrid2.cells[0,rnum]='' then
+        begin
+                for y := rnum+1 to StringGrid2.RowCount do
+                begin
+                        for x := 0 to StringGrid2.ColCount do
+                        begin
+                                stringgrid2.cells[x,y-1]:=stringgrid2.cells[x,y];
+                        end;
+                end;
+                StringGrid2.RowCount:=StringGrid2.RowCount-1;
+        end
+        else
+                inc(rnum);
+     end;
 end;
 
 procedure TCatalogForm.StringGrid1DrawCell(Sender: TObject; Col,
